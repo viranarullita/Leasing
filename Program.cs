@@ -1,4 +1,6 @@
+using Leasing.Interface;
 using Leasing.Models;
+using Leasing.Services;
 using Microsoft.EntityFrameworkCore;
 
 internal class Program
@@ -16,6 +18,7 @@ internal class Program
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors()
         );
+        builder.Services.AddScoped<ILeasingCalculator, LeasingService>();
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
@@ -39,7 +42,7 @@ internal class Program
 
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}");
+            pattern: "{controller=Leasing}/{action=Index}/{id?}");
 
         app.Run();
     }

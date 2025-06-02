@@ -2,7 +2,7 @@
 
 namespace Leasing.Controllers
 {
-    public class HomeController : Controller
+    public class PembuatController : Controller
     {
         public IActionResult Index()
         {

@@ -1,0 +1,191 @@
+﻿@model Leasing.Models.DTO.LeasingRequestDTO
+@{
+    ViewData["Title"] = "Analisa Leasing Motor";
+    var result = ViewBag.Result as Leasing.Models.DB.LeasingResult;
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Analisa Leasing Motor</h2>
+
+    <!-- FORM -->
+    <form method="post" class="row g-3">
+        <div class="col-md-6">
+            <label for="HargaMotor" class="form-label">Harga Motor (Rp)</label>
+            <input asp-for="HargaMotor" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+            <label for="DP" class="form-label">Uang Muka / DP (Rp)</label>
+            <input asp-for="DP" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+            <label for="Cicilan" class="form-label">Cicilan per Bulan (Rp)</label>
+            <input asp-for="Cicilan" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+            <label for="LamaBulan" class="form-label">Lama Cicilan (Bulan)</label>
+            <input asp-for="LamaBulan" class="form-control" required />
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Hitung</button>
+        </div>
+    </form>
+
+    @if (result != null)
+    {
+        <hr class="my-4" />
+        <h4 class="mb-3">Hasil Perhitungan:</h4>
+
+        <table class="table table-bordered table-striped">
+            <tbody>
+                <tr>
+                    <th>Total Angsuran (Selama @Model.LamaBulan Bulan)</th>
+                    <td>@result.TotalAngsuran.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <th>Sisa Pembayaran (Harga Motor - DP)</th>
+                    <td>@result.SisaPembayaran.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <th>Profit Leasing</th>
+                    <td>@result.ProfitLeasing.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <th>Persentase Keuntungan</th>
+                    <td>@result.PresentasiKeuntungan.ToString("F2")%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-5">NPV dan IRR berdasarkan Interest</h5>
+        <table class="table table-bordered text-center align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th style="width: 20%;">Jenis</th>
+                    <th style="width: 20%;">Interest</th>
+                    <th style="width: 60%;">Nilai</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="5" class="fw-bold align-middle">NPV</td>
+                    <td>10%</td>
+                    <td>@result.NPV10.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <td>20%</td>
+                    <td>@result.NPV20.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <td>30%</td>
+                    <td>@result.NPV30.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <td>40%</td>
+                    <td>@result.NPV40.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <td>50%</td>
+                    <td>@result.NPV50.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">IRR</td>
+                    <td>@result.IRR.ToString("F1")%</td>
+                    <td>(NPV = 0)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr />
+        <h4 class="mt-5">Grafik NPV terhadap Interest Rate</h4>
+        <canvas id="npvChart" width="1000" height="400"></canvas>
+
+        <hr />
+        <h4>Lembar IRR</h4>
+        <p><strong>Interest:</strong> @result.IRR.ToString("0.0")% (@result.IRRMonthlyRate.ToString("0.000"))</p>
+        <p><strong>∑PV:</strong> @result.IRRDetails.Sum(x => x.NilaiPV).ToString("N0", new System.Globalization.CultureInfo("id-ID"))</p>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Bulan</th>
+                    <th>PV</th>
+                    <th>Nilai</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in result.IRRDetails)
+                {
+                    <tr>
+                        <td>@item.Bulan</td>
+                        <td>@($"PV{item.Bulan}")</td> <!-- Kolom PV ditampilkan sebagai "PV1", "PV2", dst -->
+                        <td>@string.Format(new System.Globalization.CultureInfo("id-ID"), "{0:N0}", item.NilaiPV)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+        <h4 class="mt-5">Lembar Perhitungan NPV per Bunga</h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mt-3">
+            @Html.Partial("_CardPV", Tuple.Create("NPV 10%", result.PV10List))
+            @Html.Partial("_CardPV", Tuple.Create("NPV 20%", result.PV20List))
+            @Html.Partial("_CardPV", Tuple.Create("NPV 30%", result.PV30List))
+            @Html.Partial("_CardPV", Tuple.Create("NPV 40%", result.PV40List))
+            @Html.Partial("_CardPV", Tuple.Create("NPV 50%", result.PV50List))
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @if (result != null)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const chartLabels = @Html.Raw(Json.Serialize(result.NPVChartData.Select(p => Math.Round(p.Interest * 100, 2))));
+            const chartData = @Html.Raw(Json.Serialize(result.NPVChartData.Select(p => p.NPV)));
+
+            const ctx = document.getElementById('npvChart').getContext('2d');
+            const npvChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'NPV (Rp)',
+                        data: chartData,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.3,
+                        pointRadius: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Grafik NPV terhadap Interest Rate (%)'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Interest Rate (%)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'NPV (Rp)'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}
